@@ -8,8 +8,8 @@ import math
 learn_rate = 0.2
 epoch = 100
 accuracy = 0.9
-number_of_hidden_layer = 1
-number_of_hidden_layer_neuron = [2]
+number_of_hidden_layer = 0
+number_of_hidden_layer_neuron = []
 #input data
 data = []
 sol = []
@@ -78,55 +78,55 @@ def data_input(path):
      f.close()
    
   
-def paint(data, sol, status ):
+def paint(data, sol, status):
+     
      x = []
      y = []
-     x2 = []
-     y2 = []
-     for i  in range(len(data)):
-          for j in range(len(data[i])):
+     tmp_sol = []
+     for i in range(len(data)):
+          tmp_x = []
+          tmp_y = []
+          ch = True
+          index = 0
+          for j in range(len(tmp_sol)):    
+               if(tmp_sol[j] == sol[i]):
+                    ch = False
+                    index = j 
+                    break
+          if(ch == True):
+               tmp_sol.append(sol[i])
                
-               if(sol[i] == 1):
-                    x.append(data[i][1])
-                    y.append(data[i][2])
-               else:
-                    x2.append(data[i][1])
-                    y2.append(data[i][2])
-     max_x = 0
-     min_x = 0
-     max_y = 0
-     min_y = 0
-     # 座標最大 最小
-     if(len(x) != 0 and len(x2)!= 0):
-          max_x = max([max(x), max(x2)])
-          min_x = min([min(x), min(x2)])
-     elif(len(x) != 0):
-          max_x = max(x)
-          min_x = min(x)
-     elif(len(x2)!= 0):
-          max_x = max(x2)
-          min_x = min(x2)
+               x.append([data[i][1]])
+               y.append([data[i][2]])
+          else:
+               x[index].append(data[i][1])
+               y[index].append(data[i][2])
+     max_x = max(x[0])
+     min_x = min(x[0])
+     max_y = max(y[0])
+     min_y = min(y[0])
+     for item in x:
+         
+          if(max_x < max(item)):
+               max_x = max(item)
+          if(min_x > min(item)):
+               min_x = min(item)
 
+     for item in y:
+          if(max_y < max(item)):
+               max_y = max(item)
 
-     if(len(y) != 0 and len(y2)!= 0):
-          max_y = max([max(y), max(y2)])
-          min_y = min([min(y), min(y2)])
-     elif(len(y) != 0):
-          max_y = max(y)
-          min_y = min(y)
-     elif(len(y2)!= 0):
-          max_y = max(y2)
-          min_y = min(y2)
-    
-     plt.plot(x, y ,'r^')
-     plt.plot(x2, y2 ,'gs')
-     if(best_w[2] != 0):
-          plt.plot([max_x, min_x], [(best_w[0] - best_w[1] * max_x)/best_w[2], (best_w[0] - best_w[1] * min_x)/best_w[2]] ,'y--')
-     else:
-          plt.plot([max_x, min_x], [max_y, min_y] ,'y--')
+          if(min_y > min(item)):
+               min_y = min(item)
                
-
-     #存檔的path
+          
+     color = ['b^', 'g^', 'r^', 'c^', 'm^' , 'y^', 'k^']
+     for i in range(len(x)):
+          plt.plot(x[i], y[i] ,color[i])
+     
+     #plt.xlim(min_x, max_x)
+     #plt.ylim(min_y, max_y)
+          #存檔的path
      path_spilt = path.split('\\')
      path_spilt = path.split('/')
      name = (path_spilt[len(path_spilt)-1].split('.'))[0]
@@ -176,27 +176,30 @@ def train():
      
      #初始weight
      w = []
-     y = []
+     output = []
+     
      for i in range(number_of_hidden_layer+1):
           dimension = 0
           d_tmp_w = []
           if(i == 0):
-               dimension = len(sol_class)
+               dimension = len(data[0])-1
                for k in range(number_of_hidden_layer_neuron[i]):
                     tmp_w = [-1]
                     for j in range(dimension):
                          tmp_w.append(random.uniform(-1, 1))
                     d_tmp_w.append(tmp_w)
-          else:
-               dimension = number_of_hidden_layer_neuron[i-1]
-               num = 0
-               if(i == len(number_of_hidden_layer_neuron)):
-                    num = len(sol_class)
-               else:
-                    num = number_of_hidden_layer_neuron[i]
-               for k in range(num):
+          elif(i == number_of_hidden_layer):
+               
+               for k in range(len(sol_class)):
                     tmp_w = [-1]
-                    for j in range(dimension):
+                    for j in range(number_of_hidden_layer_neuron[i-1]):
+                         tmp_w.append(random.uniform(-1, 1))
+                    d_tmp_w.append(tmp_w)
+          else:
+               for k in range(number_of_hidden_layer_neuron[i]):
+                    print(i, number_of_hidden_layer_neuron[i])
+                    tmp_w = [-1]
+                    for j in range(number_of_hidden_layer_neuron[i-1]):
                          tmp_w.append(random.uniform(-1, 1))
                     d_tmp_w.append(tmp_w)
           w.append(d_tmp_w)
@@ -209,24 +212,26 @@ def train():
 
      pre_ac = 0
      pre_w = []
+     
      data_train, sol_train, data_test, sol_test = data_split()
+    
      
-     data_train = [[-1, 1, 1]]
-     w = [[[-1.2, 1, 1], [0.3, 1, 1]], [[0.5, 0.4, 0.8], [0.5, 0.4, 0.8]]]
-     
+     print(w)
      #start train
      for i in range(epoch):
           #forwarding
+          
           for item_x, item_y in zip(data_train, sol_train):
+               
+               y = []
+               change_weight = []
                for j in range(number_of_hidden_layer+1):
                     tmp_y = []
                     if(j == 0):
                          for k in range(number_of_hidden_layer_neuron[j]):
                               tmp = 0
                               
-                              for z in range(len(sol_class)+1):
-                                   #print(len(sol_class), len(w[j][k]))
-                                   
+                              for z in range(len(item_x)):     
                                    tmp = tmp + item_x[z] * w[j][k][z]
                               tmp_y.append(1/(1+math.exp(-tmp)))
                          y.append(tmp_y)
@@ -251,87 +256,184 @@ def train():
                                         tmp = tmp + y[j-1][z-1] * w[j][k][z]
                               tmp_y.append(1/(1+math.exp(-tmp)))
                          y.append(tmp_y)
-               print(y)
-               return
-          #evalute
-          count = 0
-          for j in range(len(data_train)):
-               sum = 0
-               for k in range(len(data_train[j])):
-                    sum = sum + data_train[j][k] * w[k]
+               #backward
+               count = -2
+               for j in (reversed (range(number_of_hidden_layer+1))):
+                    tmp_change_weight = []
+                    count = count + 1 
+                    if(j == number_of_hidden_layer):
+                         for k in range(len(sol_class)):
+                              tmp = 0
+                              tmp = (item_y[k] - y[j][k]) * y[j][k] * (1 - y[j][k])
+                              tmp_change_weight.append(tmp)
+                         change_weight.append(tmp_change_weight)
+                         
+                    elif(j == number_of_hidden_layer - 1):
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              tmp = y[j][k] * (1 - y[j][k])
+                              sigma = 0
+                              for z in range(len(sol_class)):
+                                   
+                                   sigma = sigma + w[j+1][z][k+1] * change_weight[count][z] 
+                              tmp = tmp * sigma
+                              tmp_change_weight.append(tmp)
+                         change_weight.append(tmp_change_weight)
+                    else:
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              tmp = y[j][k] * (1 - y[j][k])
+                              sigma = 0
+                              for z in range(number_of_hidden_layer_neuron[j+1]):
+                                   sigma = sigma + w[j+1][z][k+1] * change_weight[count][z]
+                              tmp = tmp * sigma
+                              tmp_change_weight.append(tmp)
+                         change_weight.append(tmp_change_weight)
                
                
-               if(sum >= 0):
-                    predict = sol_class[0]
-               if(sum < 0):
-                    predict = sol_class[1]
-               if(predict == sol[j]):
-                    count = count + 1
-          print("epoch: " + str(i+1) + "\ntrain accuracy:", count/len(data_train))
-
-
+               #change wight
+               change_weight = list(reversed(change_weight))
+               for j in range(number_of_hidden_layer+1):
+                    if(j == 0):     
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              for z in range(len(item_x)): 
+                                   w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10) * change_weight[j][k] * item_x[z]
+                    elif(j == number_of_hidden_layer):
+                         for k in range(len(sol_class)):
+                              for z in range(number_of_hidden_layer_neuron[j-1]+1):
+                                   if(z == 0): 
+                                        w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10) * change_weight[j][k] * -1
+                                   else:
+                                        w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10) * change_weight[j][k] * y[j-1][z-1]
+                    else:
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              for z in range(number_of_hidden_layer_neuron[j-1]+1):
+                                   if(z == 0): 
+                                        w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10) * change_weight[j][k] * -1
+                                   else:
+                                        w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10)* change_weight[j][k] * y[j-1][z-1]
                     
+          #evaluate
           count = 0
-          for j in range(len(data_test)):
-               sum = 0
-               for k in range(len(data_test[j])):
-                    sum = sum + data_test[j][k] * w[k]
-               
-               if(sum >= 0):
-                    predict = sol_class[0]
-               if(sum < 0):
-                    predict = sol_class[1]
-               if(predict == sol_test[j]):
-                    count = count + 1
-          ac = count/len(data_test)
-          
-          if(pre_ac > ac):
-               w = pre_w
-               ac = pre_ac
-          else:
-               pre_ac = ac
-               pre_w = w
-               
-          #record best accuracy
-          if(best_ac < ac):
-               best_ac = ac
-               best_w = w
-          
-          
-  
-          print("test accuracy:", str(ac))
-          
-          count = 0
-          for j in range(len(data)):
-               sum = 0
-               for k in range(len(data[j])):
-                    sum = sum + data[j][k] * w[k]
-               
-               
-               if(sum >= 0):
-                    predict = sol_class[0]
-               if(sum < 0):
-                    predict = sol_class[1]
-               if(predict == sol[j]):
-                    count = count + 1
-               
-          final_ac = count/len(data)
-          print("total_accuracy", final_ac)
-          if(best_ac >= accuracy):
-               paint(data_train, sol_train, 0)
-               return  
+          rmse_train = 0
+          for item_x, item_y in zip(data_train, sol_train):
+               y = []
+               predict = []
+               for j in range(number_of_hidden_layer+1):
+                    tmp_y = []
+                    if(j == 0):
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              tmp = 0
+                              for z in range(len(item_x)):     
+                                   tmp = tmp + item_x[z] * w[j][k][z]
+                              tmp_y.append(1/(1+math.exp(-tmp)))
+                         y.append(tmp_y)
+                    elif(j == number_of_hidden_layer):
+                         for k in range(len(sol_class)):
+                              tmp = 0
+                              for z in range(number_of_hidden_layer_neuron[j-1]+1):
+                                   if(z == 0):
+                                        tmp = tmp + -1 * w[j][k][z]
+                                   else:
+                                        tmp = tmp + y[j-1][z-1] * w[j][k][z]
+                                        
+                              tmp_y.append(1/(1+math.exp(-tmp)))
+                         y.append(tmp_y)
+                         predict = tmp_y
+                    else:
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              tmp = 0
+                              for z in range(number_of_hidden_layer_neuron[j-1]+1):
+                                   if(z == 0):
+                                        tmp = tmp + -1 * w[j][k][z]
+                                   else:
+                                        tmp = tmp + y[j-1][z-1] * w[j][k][z]
+                              tmp_y.append(1/(1+math.exp(-tmp)))
+                         y.append(tmp_y)
+               sol_index = 0
+               predict_index = 0
+               predict_content = 0
+               sol_index = 0
+               sol_content = 0
+               for k in range(len(item_y)):
+                    if(sol_content < item_y[k]):
+                         sol_index = k
+                         sol_content = item_y[k]
+               for k in range(len(predict)):
+                    if(predict_content < predict[k]):
+                         predict_index = k
+                         predict_content = predict[k]
 
-     if(len(sol_class) <= 2):     
-          paint(data_train, sol_train, 0)
-         
-     '''
-     if(len(sol_class) > 2):
-          for i in range(len(sol_class)):
-               w.append(random.random())
-     else:
-          w = [-1,1, 0]
-        '''  
-     
+               for k in range(len(predict)):
+                    rmse_train = rmse_train + (predict[k] - item_y[k]) * (predict[k] - item_y[k])
+                    
+               if(predict_index == sol_index):
+                    count = count + 1
+               
+
+          print("train -> accuracy:" , count/len(data_train), end = "")
+          print(", RMSE", math.sqrt(rmse_train / len(data_train)))
+          
+          count = 0
+          rmse_test = 0
+          for item_x, item_y in zip(data_test, sol_test):
+               y = []
+               predict = []
+               for j in range(number_of_hidden_layer+1):
+                    tmp_y = []
+                    if(j == 0):
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              tmp = 0
+                              for z in range(len(item_x)):     
+                                   tmp = tmp + item_x[z] * w[j][k][z]
+                              tmp_y.append(1/(1+math.exp(-tmp)))
+                         y.append(tmp_y)
+                    elif(j == number_of_hidden_layer):
+                         for k in range(len(sol_class)):
+                              tmp = 0
+                              for z in range(number_of_hidden_layer_neuron[j-1]+1):
+                                   if(z == 0):
+                                        tmp = tmp + -1 * w[j][k][z]
+                                   else:
+                                        tmp = tmp + y[j-1][z-1] * w[j][k][z]
+                                        
+                              tmp_y.append(1/(1+math.exp(-tmp)))
+                         y.append(tmp_y)
+                         predict = tmp_y
+                    else:
+                         for k in range(number_of_hidden_layer_neuron[j]):
+                              tmp = 0
+                              for z in range(number_of_hidden_layer_neuron[j-1]+1):
+                                   if(z == 0):
+                                        tmp = tmp + -1 * w[j][k][z]
+                                   else:
+                                        tmp = tmp + y[j-1][z-1] * w[j][k][z]
+                              tmp_y.append(1/(1+math.exp(-tmp)))
+                         y.append(tmp_y)
+               sol_index = 0
+               predict_index = 0
+               predict_content = 0
+               sol_index = 0
+               sol_content = 0
+               for k in range(len(item_y)):
+                    if(sol_content < item_y[k]):
+                         sol_index = k
+                         sol_content = item_y[k]
+               for k in range(len(predict)):
+                    if(predict_content < predict[k]):
+                         predict_index = k
+                         predict_content = predict[k]
+               for k in range(len(predict)):
+                    rmse_test = rmse_test + (predict[k] - item_y[k]) * (predict[k] - item_y[k])
+               if(predict_index == sol_index):
+                    count = count + 1
+          print("test accuracy" , count/len(data_test), end = " ")
+          print(", RMSE", math.sqrt(rmse_test / len(data_test)))
+        
+               
+                    
+               
+                         
+                              
+               
           
 if __name__ == '__main__':
      while(True):
@@ -345,6 +447,8 @@ if __name__ == '__main__':
           c1 = False
           c2 = False
           c3 = False
+          c4 = False
+          c5 = False
           while(True):
                if(c1 == False):
                     try:
@@ -367,18 +471,32 @@ if __name__ == '__main__':
                     except:
                          print("accuracy error")
 
-                
+          while(True):
+               if(c4 == False):
+                    try:
+                         number_of_hidden_layer = int(input("type:int how many hidden layer are: "))
+                         break
+                    except:
+                         print("hidden layer error")
+          while(True):
+               if(c5 == False):
+                    try:
+                         for i in range(number_of_hidden_layer):
+                              print("type:int how many neuron are in ", end = "")
+                              print(i+1, end = "")
+                              print(" hidden layer", end = ": ")
+                              t = int(input())
+                              number_of_hidden_layer_neuron.append(t)      
+                         break 
+                    except:
+                         print("neuron error")
           if(data_input(path) != False):
                train()
-               '''
-               print("test data  accuracy: " + str(best_ac),)
-               print("wieght ", end = "")
-               print(best_w)
-
-               print("all data accuracy: ", final_ac)
-               if(len(sol_class) <= 2):     
+               print(len(data[0]))
+               if(len(data[0]) <= 3):
+                    
                     paint(data, sol, 1)
-               '''
+               
           print("")
           
           status = int(input("input->1 continue, input->2 stop: "))
