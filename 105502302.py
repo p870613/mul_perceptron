@@ -43,7 +43,7 @@ def data_input(path):
           count = 0
           for item in sp:               
                if(count == (len(sp)-1)):
-                    data_y = int(item)
+                    data_y = float(item)
                else:
                     data_x.append(float(item))
                count= count + 1
@@ -73,7 +73,7 @@ def data_input(path):
                else:
                     tmp.append(1)
           sol.append(tmp)
-    
+     
      
      f.close()
    
@@ -83,7 +83,11 @@ def paint(data, sol, status):
      x = []
      y = []
      tmp_sol = []
+     
      for i in range(len(data)):
+          #print(data[i])
+          #print(sol[i])
+          
           tmp_x = []
           tmp_y = []
           ch = True
@@ -119,9 +123,11 @@ def paint(data, sol, status):
           if(min_y > min(item)):
                min_y = min(item)
                
-          
+
+     
      color = ['b^', 'g^', 'r^', 'c^', 'm^' , 'y^', 'k^']
      for i in range(len(x)):
+          print(i)
           plt.plot(x[i], y[i] ,color[i])
      
      #plt.xlim(min_x, max_x)
@@ -163,6 +169,13 @@ def data_split():
                sol_test.append(sol[j])
                del data_train[ran]
                del sol_train[ran]
+
+          if(len(data_train) == 0):
+               ran = random.randint(0, len(data_test)-1)
+               data_train.append(data_test[ran])
+               sol_train.append(sol[j])
+               del data_test[ran]
+               del sol_test[ran]
 
      return data_train, sol_train, data_test, sol_test
 
@@ -216,7 +229,6 @@ def train():
      data_train, sol_train, data_test, sol_test = data_split()
     
      
-     print(w)
      #start train
      for i in range(epoch):
           #forwarding
@@ -310,7 +322,7 @@ def train():
                                         w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10) * change_weight[j][k] * -1
                                    else:
                                         w[j][k][z] = w[j][k][z] + (learn_rate)/(1+i/10)* change_weight[j][k] * y[j-1][z-1]
-                    
+          best_w = w     
           #evaluate
           count = 0
           rmse_train = 0
@@ -353,6 +365,7 @@ def train():
                predict_content = 0
                sol_index = 0
                sol_content = 0
+               
                for k in range(len(item_y)):
                     if(sol_content < item_y[k]):
                          sol_index = k
@@ -364,11 +377,11 @@ def train():
 
                for k in range(len(predict)):
                     rmse_train = rmse_train + (predict[k] - item_y[k]) * (predict[k] - item_y[k])
-                    
+               #print(predict_index, sol_index)
                if(predict_index == sol_index):
                     count = count + 1
                
-
+          print("epoch", i+1)
           print("train -> accuracy:" , count/len(data_train), end = "")
           print(", RMSE", math.sqrt(rmse_train / len(data_train)))
           
@@ -427,14 +440,15 @@ def train():
                     count = count + 1
           print("test accuracy" , count/len(data_test), end = " ")
           print(", RMSE", math.sqrt(rmse_test / len(data_test)))
+
+          if((count/len(data_test)) >= accuracy):
+               return
+          
         
                
                     
                
                          
-                              
-               
-          
 if __name__ == '__main__':
      while(True):
           data = []
@@ -492,9 +506,8 @@ if __name__ == '__main__':
                          print("neuron error")
           if(data_input(path) != False):
                train()
-               print(len(data[0]))
+               print(best_w)
                if(len(data[0]) <= 3):
-                    
                     paint(data, sol, 1)
                
           print("")
